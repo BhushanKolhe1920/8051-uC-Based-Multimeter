@@ -1,12 +1,15 @@
 # 8051-uC-Based-Multimeter
-Project Name : 8051 Microcontroller Based Multimeter
 
-Circuit Diagram : 
-!(https://github.com/BhushanKolhe1920/8051-uC-Based-Multimeter/blob/master/Overall%20Design%20-%20Copy.PNG)
+!(https://github.com/BhushanKolhe1920/8051-uC-Based-Multimeter/blob/master/img/Overall%20Design.PNG)
 
+A Group Project Report submitted by Project Team :  
 
-Project Team : 
-A. Bhushan Bhagwat Kolhe         bhushank1920@gmail.com               
-B. Harshal Rajesh Rathod         rathodharshal99@gmail.com         
-C. Cromwell Mendes               cromwellmendes18@gmail.com    
-D. Atharva Bondre                atharvabondre853@gmail.com    
+1. Bhushan Bhagwat Kolhe         bhushank1920@gmail.com  
+2. Harshal Rajesh Rathod         rathodharshal99@gmail.com  
+3. Cromwell Mendes               cromwellmendes16@gmail.com  
+4. Atharva Bondre                atharvabondre853@gmail.com  
+
+Under the guidance of  
+Mr. Yogesh Gholap
+
+# License
