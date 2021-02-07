@@ -73,4 +73,4 @@ The switching is done using an interrupt based approach. On pressing the task sw
 
 ---
 
-[GNU GPLv3](LICENSE.md)
+[GNU GPLv3](LICENSE.txt)
