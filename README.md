@@ -15,7 +15,7 @@ Mr. Yogesh Gholap
 # Table of Contents
 
 - [Tasks](#tasks)  
-  - [Frequency Meter](#frequency-meter)  
+  - [Frequency Meter](#1.-frequency-meter)  
   - [AC Voltage Meter](#ac-voltage-meter)  
   - [Resistance](#resistance)  
   - [DC Voltage](#dc-voltage)
