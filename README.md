@@ -65,10 +65,4 @@ The switching is done using an interrupt based approach. On pressing the task sw
 
 ## License
 
-<<<<<<< HEAD
----
-
 [GNU GPLv3](LICENSE.txt)
-=======
-[GNU GPLv3](LICENSE.md)
->>>>>>> 0fc1fd96beab43b3a3d0987e9d7d2b092675cea5
