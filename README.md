@@ -15,9 +15,7 @@ Mr. Yogesh Gholap
 </p>
 
 
-## Table of Contents
-
----  
+## Table of Contents 
 
 - [Tasks](#tasks)  
   - [Frequency Meter](#1.-frequency-meter)  
@@ -28,8 +26,6 @@ Mr. Yogesh Gholap
 - [License](#license)
 
 ## Tasks
-
----
 
 ### 1. Frequency Meter  
 
@@ -64,13 +60,15 @@ The DC voltage is measured directly and displayed.
 
 ## The Task Switching  
 
----
-
 The switching is done using an interrupt based approach. On pressing the task switch button INT0 is used to switch immediately to other task. However this leads to the RETI issue since 8051 requires RETI to be issue to recognize further interrupts. When ‘RETI’ executes it reloads PC with contents of TOS. If SP = 9 then (PCH = 09h and PCL = 08h). So in the solution, at beginning of res, I have forced SP = 09h, and loaded a known dummy address on stack (09h = F0h and 08h =00h), which makes return address = F000h. After this, when I execute ‘RETI’, program return (goes) to address F000h, from where I jump back some safe place in res2, which I have labeled as ‘dummy_res_ret”. Thus, now after execution of ‘RETI’, the previous interrupt is truly completed and new interrupts can be recognized.  
 
 
 ## License
 
+<<<<<<< HEAD
 ---
 
 [GNU GPLv3](LICENSE.txt)
+=======
+[GNU GPLv3](LICENSE.md)
+>>>>>>> 0fc1fd96beab43b3a3d0987e9d7d2b092675cea5
