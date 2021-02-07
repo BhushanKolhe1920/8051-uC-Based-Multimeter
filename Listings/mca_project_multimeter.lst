@@ -1,0 +1,1013 @@
+A51 MACRO ASSEMBLER  MCA_PROJECT_MULTIMETER                                               06/23/2020 22:16:33 PAGE     1
+
+
+MACRO ASSEMBLER A51 V8.2.7.0
+OBJECT MODULE PLACED IN .\Objects\mca_project_multimeter.obj
+ASSEMBLER INVOKED BY: D:\keil\C51\BIN\A51.EXE mca_project_multimeter.asm SET(SMALL) DEBUG PRINT(.\Listings\mca_project_m
+                      ultimeter.lst) OBJECT(.\Objects\mca_project_multimeter.obj) EP
+
+LOC  OBJ            LINE     SOURCE
+
+0000                   1     org 0000h
+0000 2100              2             JMP begin
+                       3             
+0003                   4     org 0003h                                               ;interrupt for 0, on interrupt 0 ch
+                             ange mode
+0003 811E              5             JMP mode_select
+                       6             
+0100                   7     org 0100h
+0100                   8             begin:
+                       9     
+0100 30D40D           10             JNB     PSW.4,down1                             ;----changed by y2g 19jan20
+0103 758109           11                     MOV     Sp,#09h                         ;----changed by y2g 19jan20  reset 
+                             stack pointer
+0106 7509F0           12                     MOV 09,#0F0h                    ;----changed by y2g 19jan20  update dummy r
+                             eturn address on TOS
+0109 7508A0           13                     MOV 08,#0A0h                    ;----changed by y2g 19jan20  update dummy r
+                             eturn address on TOS
+010C 32               14                     RETI
+010D                  15                     dummy_begin_ret:
+010D 758801           16                     MOV     TCON,#01h                       ;----changed by y2g 19jan20  clear 
+                             previous INT0 and config INT0 as -ve edge triggered
+                      17                     
+0110 75A881           18     down1:  MOV     IE,#81h                         ;enable interrupt 0
+0113 758801           19                     MOV     TCON,#01h                       ;----changed by y2g 19jan20  clear 
+                             previous INT0 and config INT0 as -ve edge triggered  
+                      20             
+0116 D2D4             21             SETB PSW.4                                      ;switching to register bank 2 and i
+                             nitialising the first value to 0
+0118 7800             22             MOV  R0,#00h
+011A 7901             23             MOV  R1,#01h                            ;----changed by y2g 19jan20
+011C 7A01             24             MOV  R2,#01h                            ;----changed by y2g 19jan20
+011E 7B01             25             MOV  R3,#01h                            ;----changed by y2g 19jan20
+0120 C2D4             26             CLR  PSW.4      
+                      27     
+                      28     
+                      29                                                     
+                      30                                                     
+                      31     
+                      32     
+                      33             
+                      34             
+0122 75A0FF           35             MOV P2,#0FFh                            ;configure p2 as input
+0125 D282             36             SETB P0.2                                       ;set EOC as input
+0127 C280             37             CLR P0.0                                        ;set ALE as output
+0129 C281             38             CLR P0.1                                        ;set SC as output
+012B C283             39             CLR P0.3                                        ;set OE as output
+                      40             
+012D C285             41             CLR P0.5                                        ; A = 0
+012F C286             42             CLR P0.6                                        ; B = 0
+0131 C287             43             CLR P0.7                                        ; C = 0
+                      44                     
+                      45                     
+0133 1203F5           46             LCALL set_led
+                      47             
+                      48                     
+                      49     
+                      50     
+A51 MACRO ASSEMBLER  MCA_PROJECT_MULTIMETER                                               06/23/2020 22:16:33 PAGE     2
+
+0136 900600           51             MOV DPTR,#acVoltage
+0139                  52             C1:
+0139 E4               53                     CLR     A
+013A 93               54                     MOVC    A,@A+DPTR
+013B 120412           55                     LCALL   datamy
+013E 120800           56                     LCALL   delay
+0141 A3               57                     INC             DPTR
+0142 70F5             58                     JNZ             C1
+                      59     
+                      60     
+0144                  61     acVolt:                                                 ;keep reading and displaying the va
+                             lues
+                      62     
+0144 74C0             63             MOV A,#0C0H                             
+0146 9106             64             ACALL command
+                      65     
+                      66     
+0148 120800           67             LCALL delay
+                      68             
+014B D280             69             SETB P0.0                                       ;latch ALE
+014D D281             70             SETB P0.1                                       ;start conversion
+                      71                     
+014F 120800           72             LCALL delay
+                      73             
+0152 C280             74             CLR P0.0                                        ;latch ALE
+0154 C281             75             CLR P0.1                                        ;start conversion
+                      76             
+0156 120800           77             LCALL delay
+                      78             
+0159                  79             here5:
+0159 3082FD           80             JNB P0.2, here5                         ;check till EOC
+015C D283             81             SETB P0.3                                       ;set output enable
+015E AFA0             82             MOV R7,P2                                       ;read port2 values into R7
+0160 C283             83             CLR P0.3        
+                      84     
+                      85     
+                      86     
+                      87     
+                      88             
+0162 EF               89             MOV A,R7                                
+0163 75F056           90             MOV B,#86d                                      ;value to be multiplied to get the 
+                             reading in rms
+                      91             
+                      92             
+0166 A4               93             MUL     AB
+                      94     
+                      95     
+0167 7930             96                     MOV             R1,#30h                 ;Point R1 to memory 30h
+0169 85F006           97                     MOV             06,B                    ;dividend Higher Byte to R6  ---> R
+                             6 = 03h
+016C F507             98                     MOV             07,A                    ;dividend Lower Byte to  R7  ---> R
+                             7 = 0E8h
+016E 750400           99     up1:    MOV             04,#00d                 ;divisor Higher Byte to  R4  ---> R4 = 00d
+0171 75050A          100                     MOV             05,#10d                 ;divisor Lower Byte to   R5  ---> R
+                             5 = 10d
+0174 121000          101                     LCALL   SIDIV
+0177 A705            102                     MOV             @R1,05                  ;Save Units place in 30h
+0179 09              103                     INC             R1
+017A EE              104                     MOV             A,R6
+017B 4F              105                     ORL     A,R7
+017C 70F0            106                     JNZ     up1
+                     107     
+                     108     
+017E 19              109     up2:    DEC             R1
+017F E7              110                     MOV             A,@R1
+0180 2430            111                     ADD     A,#30h
+A51 MACRO ASSEMBLER  MCA_PROJECT_MULTIMETER                                               06/23/2020 22:16:33 PAGE     3
+
+0182 120412          112                     LCALL   datamy
+0185 B932F6          113                     CJNE    R1,#32h,up2             ;change here to display only the 3 starting
+                              values since these values are the ones that show the value
+                     114     
+0188 7456            115                     MOV     A,#'V'
+018A 120412          116                     LCALL   datamy
+018D 120800          117                     LCALL   DELAY
+                     118                     
+                     119                     
+0190 80B2            120                     JMP             acVolt
+                     121             
+                     122     
+0192                 123     res2:
+0192 30D40D          124             JNB     PSW.4,down7                             ;----changed by y2g 19jan20
+0195 758109          125                     MOV     Sp,#09h                         ;----changed by y2g 19jan20  reset 
+                             stack pointer
+0198 7509F0          126                     MOV 09,#0F0h                    ;----changed by y2g 19jan20  update dummy r
+                             eturn address on TOS
+019B 750800          127                     MOV 08,#00h                             ;----changed by y2g 19jan20  update
+                              dummy return address on TOS
+019E 32              128                     RETI
+019F                 129                     dummy_res_ret:
+019F 758801          130                     MOV     TCON,#01h                       ;----changed by y2g 19jan20  clear 
+                             previous INT0 and config INT0 as -ve edge triggered
+                     131     
+01A2 7801            132     down7:  MOV R0,#01h                             ;----changed by y2g 19jan20                
+                                                  
+01A4 7900            133                     MOV R1,#00h                             ;----changed by y2g 19jan20
+01A6 7A01            134                     MOV     R2,#01h                         ;----changed by y2g 19jan20
+01A8 7B01            135                     MOV R3,#01h                             ;----changed by y2g 19jan20
+01AA C2D4            136                     CLR PSW.4                               ;back to bank 0
+                     137     
+01AC 758801          138             MOV     TCON,#01h                               ;----changed by y2g 19jan20  clear 
+                             previous INT0 and config INT0 as -ve edge triggered
+01AF 75A881          139             MOV     IE,#81h                                 ;----changed by y2g 19jan20     ena
+                             ble interrupt 0
+                     140     
+                     141     
+                     142     
+01B2 75A0FF          143             MOV P2,#0FFh                            ;configure p2 as input
+01B5 D282            144             SETB P0.2                                       ;set EOC as input
+01B7 C280            145             CLR P0.0                                        ;set ALE as output
+01B9 C281            146             CLR P0.1                                        ;set SC as output
+01BB C283            147             CLR P0.3                                        ;set OE as output
+                     148             
+01BD D285            149             SETB P0.5                                       ; A = 0
+01BF C286            150             CLR P0.6                                        ; B = 0
+01C1 C287            151             CLR P0.7                                        ; C = 0
+                     152     
+                     153             
+01C3 71F5            154             ACALL set_led
+                     155     
+                     156     
+                     157     
+                     158     
+01C5 90060D          159             MOV DPTR,#resistance
+                     160             
+01C8                 161             D1:
+01C8 E4              162                     CLR     A
+01C9 93              163                     MOVC    A,@A+DPTR
+01CA 120412          164                     LCALL   datamy
+01CD 120800          165                     LCALL   delay
+01D0 A3              166                     INC             DPTR
+01D1 70F5            167                     JNZ             D1      
+                     168             
+01D3                 169     calc_res:
+A51 MACRO ASSEMBLER  MCA_PROJECT_MULTIMETER                                               06/23/2020 22:16:33 PAGE     4
+
+                     170             
+01D3 74C0            171             MOV A,#0C0H                             
+01D5 9106            172             ACALL command
+                     173     
+01D7 120800          174             LCALL delay
+                     175             
+01DA D280            176             SETB P0.0                                       ;latch ALE
+01DC D281            177             SETB P0.1                                       ;start conversion
+                     178             
+01DE 120800          179             LCALL delay
+                     180             
+01E1 C280            181             CLR P0.0                                        ;latch ALE
+01E3 C281            182             CLR P0.1                                        ;start conversion
+                     183             
+01E5 120800          184             LCALL delay
+                     185             
+01E8                 186             here6:
+01E8 3082FD          187             JNB P0.2, here6                         ;check till EOC
+01EB D283            188             SETB P0.3                                       ;set output enable
+01ED AFA0            189             MOV R7,P2                                       ;read port2 values into R7
+01EF C283            190             CLR P0.3
+                     191                     
+                     192     
+                     193                                     
+01F1 EF              194             MOV A,R7
+                     195     
+01F2 74FF            196             MOV A,#0FFh                                     ; the reference voltage taken as 5v
+                              so that the value never reaches FF in order to prevent divide by 0
+                     197             
+01F4 9F              198             SUBB A,R7
+                     199             
+01F5 F9              200             MOV      R1, A
+                     201             
+01F6 EF              202             MOV     A, R7
+01F7 89F0            203             MOV B, R1
+                     204             
+01F9 84              205             DIV AB
+                     206             
+01FA 75F00A          207             MOV B, #10d
+01FD 84              208             DIV AB
+                     209     
+                     210             ;here B will have rem (units place and A will have quo (tens place)    ;----changed
+                              by y2g 19jan20
+                     211     
+01FE 2430            212             ADD A, #30h                                     ;disp tens place   ;----changed by 
+                             y2g 19jan20
+0200 120412          213             LCALL datamy
+                     214             
+0203 E5F0            215             MOV A, B
+0205 2430            216             ADD A, #30h                                     ;disp units place   ;----changed by
+                              y2g 19jan20
+0207 120412          217             LCALL datamy
+                     218             
+                     219             
+                     220     
+                     221     
+020A 744B            222             MOV A,#'K'
+020C 120412          223             LCALL datamy
+                     224             
+020F 7420            225             MOV A,#' '
+0211 120412          226             LCALL datamy
+                     227             
+0214 744F            228             MOV A,#'O'
+0216 120412          229             LCALL datamy
+                     230             
+0219 7468            231             MOV A,#'h'
+A51 MACRO ASSEMBLER  MCA_PROJECT_MULTIMETER                                               06/23/2020 22:16:33 PAGE     5
+
+021B 120412          232             LCALL datamy
+                     233             
+021E 746D            234             MOV A,#'m'
+0220 120412          235             LCALL datamy
+                     236     
+                     237             
+0223 80AE            238             JMP     calc_res
+                     239             
+                     240     
+0225                 241     dc2:
+0225 30D40D          242             JNB     PSW.4,down8                             ;----changed by y2g 19jan20
+0228 758109          243                     MOV     Sp,#09h                         ;----changed by y2g 19jan20  reset 
+                             stack pointer
+022B 7509F0          244                     MOV 09,#0F0h                    ;----changed by y2g 19jan20  update dummy r
+                             eturn address on TOS
+022E 750807          245                     MOV 08,#07h                             ;----changed by y2g 19jan20  update
+                              dummy return address on TOS
+0231 32              246                     RETI
+0232                 247                     dummy_dc2_ret:
+0232 758801          248                     MOV     TCON,#01h                       ;----changed by y2g 19jan20  clear 
+                             previous INT0 and config INT0 as -ve edge triggered
+                     249     
+0235 7801            250     down8:  MOV R0,#01h                             ;----changed by y2g 19jan20                
+                                          
+0237 7901            251                     MOV R1,#01h                             ;----changed by y2g 19jan20
+0239 7A00            252                     MOV     R2,#00h                         ;----changed by y2g 19jan20
+023B 7B01            253                     MOV R3,#01h                             ;----changed by y2g 19jan20
+023D C2D4            254                     CLR PSW.4                               ;back to bank 0
+                     255     
+023F 758801          256             MOV     TCON,#01h                               ;----changed by y2g 19jan20  clear 
+                             previous INT0 and config INT0 as -ve edge triggered
+0242 75A881          257             MOV     IE,#81h                                 ;----changed by y2g 19jan20     ena
+                             ble interrupt 0
+                     258     
+                     259     
+0245 75A0FF          260             MOV P2,#0FFh                            ;configure p2 as input
+0248 D282            261             SETB P0.2                                       ;set EOC as input
+024A C280            262             CLR P0.0                                        ;set ALE as output
+024C C281            263             CLR P0.1                                        ;set SC as output
+024E C283            264             CLR P0.3                                        ;set OE as output
+                     265             
+0250 C285            266             CLR P0.5                                        ; A = 0
+0252 D286            267             SETB P0.6                                       ; B = 1
+0254 C287            268             CLR P0.7                                        ; C = 0
+                     269             
+0256 71F5            270             ACALL set_led
+                     271             
+                     272     
+                     273     
+0258 900619          274             MOV DPTR,#dcVoltage
+                     275             
+025B                 276             E1:
+025B E4              277                     CLR     A
+025C 93              278                     MOVC    A,@A+DPTR
+025D 120412          279                     LCALL   datamy
+0260 120800          280                     LCALL   delay
+0263 A3              281                     INC             DPTR
+0264 70F5            282                     JNZ             E1
+                     283                     
+                     284                     
+0266                 285     DC_calc:                                                ;keep reading and displaying
+                     286     
+0266 74C0            287             MOV A,#0C0H                             
+0268 9106            288             ACALL command
+                     289     
+                     290     
+A51 MACRO ASSEMBLER  MCA_PROJECT_MULTIMETER                                               06/23/2020 22:16:33 PAGE     6
+
+026A 120800          291             LCALL delay
+                     292             
+026D D280            293             SETB P0.0                                       ;latch ALE
+026F D281            294             SETB P0.1                                       ;start conversion
+                     295                     
+0271 120800          296             LCALL delay
+                     297             
+0274 C280            298             CLR P0.0                                        ;latch ALE
+0276 C281            299             CLR P0.1                                        ;start conversion
+                     300             
+0278 120800          301             LCALL delay
+                     302                     
+027B                 303             here7:
+027B 3082FD          304             JNB P0.2, here7                         ;check till EOC
+027E D283            305             SETB P0.3                                       ;set output enable
+0280 AFA0            306             MOV R7,P2                                       ;read port2 values into R7
+0282 C283            307             CLR P0.3
+                     308                     
+                     309     
+                     310                             
+0284 EF              311             MOV A,R7
+                     312                     
+0285 75F014          313             MOV B,#20d
+                     314             
+0288 A4              315             MUL     AB
+                     316             
+0289 120816          317             LCALL show                                      ;in order to prevent repaetation of
+                              the extraction and mulltiplication code it has been moved to show
+                     318                             
+                     319                     
+                     320     
+                     321     
+028C 746D            322             MOV A,#'m'
+028E 9112            323             ACALL datamy
+                     324             
+0290 7456            325             MOV A,#'V'
+0292 9112            326             ACALL datamy
+                     327                             
+0294 80D0            328             JMP     DC_calc
+                     329     
+                     330     
+0296                 331     freq2:
+0296 30D40D          332             JNB     PSW.4,down9                             ;----changed by y2g 19jan20
+0299 758109          333                     MOV     Sp,#09h                         ;----changed by y2g 19jan20  reset 
+                             stack pointer
+029C 7509F0          334                     MOV 09,#0F0h                    ;----changed by y2g 19jan20  update dummy r
+                             eturn address on TOS
+029F 75080B          335                     MOV 08,#0Bh                             ;----changed by y2g 19jan20  update
+                              dummy return address on TOS
+02A2 32              336                     RETI
+02A3                 337                     dummy_freq2_ret:
+02A3 758801          338                     MOV     TCON,#01h                       ;----changed by y2g 19jan20  clear 
+                             previous INT0 and config INT0 as -ve edge triggered
+                     339     
+02A6 7801            340     down9:  MOV R0,#01h                             ;----changed by y2g 19jan20                
+                                          
+02A8 7901            341             MOV R1,#01h                                     ;----changed by y2g 19jan20
+02AA 7A01            342             MOV     R2,#01h                                 ;----changed by y2g 19jan20
+02AC 7B00            343             MOV R3,#00h                                     ;----changed by y2g 19jan20
+02AE C2D4            344             CLR PSW.4                                       ;back to bank 0
+                     345     
+02B0 758801          346             MOV     TCON,#01h                               ;----changed by y2g 19jan20  clear 
+                             previous INT0 and config INT0 as -ve edge triggered
+02B3 75A881          347             MOV     IE,#81h                                 ;----changed by y2g 19jan20     ena
+                             ble interrupt 0
+                     348     
+A51 MACRO ASSEMBLER  MCA_PROJECT_MULTIMETER                                               06/23/2020 22:16:33 PAGE     7
+
+02B6 71F5            349             ACALL set_led
+                     350     
+                     351     
+                     352             
+02B8 900625          353             MOV DPTR,#frequency
+                     354             
+02BB                 355             F1:
+02BB E4              356                     CLR     A
+02BC 93              357                     MOVC    A,@A+DPTR
+02BD 120412          358                     LCALL   datamy
+02C0 120800          359                     LCALL   delay
+02C3 A3              360                     INC             DPTR
+02C4 70F5            361                     JNZ             F1
+                     362                     
+                     363             
+02C6                 364     freq_calc:
+02C6 74C0            365             MOV A,#0C0H                             
+02C8 9106            366             ACALL command   
+                     367             
+                     368             
+                     369             
+02CA                 370             CHECK1:                                         ;checks to see whether freq is grea
+                             ter than 10k
+02CA 758915          371             MOV     TMOD,#15h                               ;counter 0 mode 1 , timer 1 mode 1
+02CD D2B4            372             SETB P3.4
+02CF 758AEF          373             MOV TL0, #0EFh                          ;COUNT UPTO 10000
+02D2 758CD8          374             MOV     TH0, #0D8h
+02D5 D28C            375             SETB TR0
+02D7 7814            376             MOV R0, #20
+                     377             
+02D9                 378     AGAIN:
+02D9 758BB0          379             MOV TL1, #0B0h                          ;1 sec timer
+02DC 758D3C          380             MOV TH1, #3Ch
+                     381             
+02DF D28E            382             SETB TR1
+02E1                 383     BACK:
+02E1 208D4D          384             JB TF0, next_check1                     ;if tf0 triggers means the freq is greater 
+                             than 10k, after which the time period is reduced to 0.1 sec
+02E4 308FFA          385             JNB TF1, BACK
+02E7 C28F            386             CLR TF1
+02E9 C28E            387             CLR TR1
+02EB D8EC            388             DJNZ R0,AGAIN
+02ED C28C            389             CLR TR0
+                     390             
+02EF 8000            391             JMP prev                                        ; if it is less than 10k then count
+                              and show it on the lcd directly
+                     392             
+                     393     
+                     394             
+02F1                 395             prev:                                           ;counter is set to 0 and displayed 
+                             upto freq of 10k
+                     396             
+                     397             ;RESETING THE TIMER/COUNTER FROM THE PREVIOUS OPERTION
+02F1 C28C            398             CLR TR0                                         ;STOPS THE COUNTER FROM PREVIOUS OP
+                             ERATION
+02F3 C28D            399             CLR TF0                                         ;CLEARS THE TF0 FROM THE PREVIOUS O
+                             PERATION
+02F5 C28E            400             CLR TR1
+02F7 C28F            401             CLR TF1
+                     402             
+02F9 758915          403             MOV     TMOD,#15h                               ;counter 0 mode 1 , timer 1 mode 1
+02FC D2B4            404             SETB P3.4
+02FE 758A00          405             MOV TL0, #00h
+0301 758C00          406             MOV     TH0, #00h
+0304 D28C            407             SETB TR0
+0306 7814            408             MOV R0, #20
+A51 MACRO ASSEMBLER  MCA_PROJECT_MULTIMETER                                               06/23/2020 22:16:33 PAGE     8
+
+                     409             
+0308                 410     AGAIN2:
+0308 758BB0          411             MOV TL1, #0B0h
+030B 758D3C          412             MOV TH1, #3Ch
+                     413             
+030E D28E            414             SETB TR1
+0310                 415     BACK2:
+0310 308FFD          416             JNB TF1, BACK2
+0313 C28F            417             CLR TF1
+0315 C28E            418             CLR TR1
+0317 D8EF            419             DJNZ R0,AGAIN2
+0319 C28C            420             CLR TR0
+031B AC8A            421             MOV R4,TL0      
+031D AD8C            422             MOV R5, TH0
+                     423             
+031F 8DF0            424             MOV B, R5
+0321 EC              425             MOV A, R4
+0322 120816          426             LCALL show
+                     427             
+0325 7448            428             MOV A,#'H'
+0327 120412          429             LCALL datamy
+                     430             
+032A 747A            431             MOV A,#'z'
+032C 120412          432             LCALL datamy
+                     433             
+032F 8095            434             SJMP freq_calc
+                     435     
+0331                 436     next_check1:                                    ;if freq greater than 10k check whether les
+                             s than 10k in timing of 0.1s, if overflow occurs than freq is greater than 100k
+                     437             ;RESETING THE TIMER/COUNTER FROM THE PREVIOUS OPERTION
+0331 C28C            438             CLR TR0                                         ;STOPS THE COUNTER FROM PREVIOUS OP
+                             ERATION
+0333 C28D            439             CLR TF0                                         ;CLEARS THE TF0 FROM THE PREVIOUS O
+                             PERATION
+0335 C28E            440             CLR TR1
+0337 C28F            441             CLR TF1
+                     442             
+0339 758915          443             MOV     TMOD,#15h                               ;counter 0 mode 1 , timer 1 mode 1
+033C D2B4            444             SETB P3.4
+033E 758AEF          445             MOV TL0, #0EFh                          ;COUNT UPTO 10000
+0341 758CD8          446             MOV     TH0, #0D8h
+0344 D28C            447             SETB TR0
+0346 7802            448             MOV R0, #2
+                     449             
+0348                 450     AGAIN3:
+0348 758BB0          451             MOV TL1, #0B0h
+034B 758D3C          452             MOV TH1, #3Ch
+                     453             
+034E D28E            454             SETB TR1
+                     455     
+0350                 456     BACK3:
+0350 208D55          457             JB TF0, next_check2                     ;if tf0 triggers means the freq is greater 
+                             than 100k, after which the time period is reduced to 0.01 sec
+0353 308FFA          458             JNB TF1, BACK3
+0356 C28F            459             CLR TF1
+0358 C28E            460             CLR TR1
+035A D8EC            461             DJNZ R0,AGAIN3
+035C C28C            462             CLR TR0
+                     463             
+035E 8000            464             JMP prev2                                       ; if it is less than 10k then count
+                              and show it on the lcd directly
+                     465             
+                     466             
+                     467     
+0360                 468             prev2:                                          ;counter is set to 0 and displayed 
+                             upto freq of 10k
+A51 MACRO ASSEMBLER  MCA_PROJECT_MULTIMETER                                               06/23/2020 22:16:33 PAGE     9
+
+                     469             
+                     470             ;RESETING THE TIMER/COUNTER FROM THE PREVIOUS OPERTION
+0360 C28C            471             CLR TR0                                         ;STOPS THE COUNTER FROM PREVIOUS OP
+                             ERATION
+0362 C28D            472             CLR TF0                                         ;CLEARS THE TF0 FROM THE PREVIOUS O
+                             PERATION
+0364 C28E            473             CLR TR1
+0366 C28F            474             CLR TF1
+                     475             
+0368 758915          476             MOV     TMOD,#15h                               ;counter 0 mode 1 , timer 1 mode 1
+036B D2B4            477             SETB P3.4
+036D 758A00          478             MOV TL0, #00h
+0370 758C00          479             MOV     TH0, #00h
+0373 D28C            480             SETB TR0
+0375 7802            481             MOV R0, #2
+                     482             
+0377                 483     AGAIN4:
+0377 758BB0          484             MOV TL1, #0B0h
+037A 758D3C          485             MOV TH1, #3Ch
+                     486             
+037D D28E            487             SETB TR1        
+037F D28E            488             SETB TR1
+0381                 489     BACK4:
+0381 308FFD          490             JNB TF1, BACK4
+0384 C28F            491             CLR TF1
+0386 C28E            492             CLR TR1
+0388 D8ED            493             DJNZ R0,AGAIN4
+038A C28C            494             CLR TR0 
+                     495             
+038C AC8A            496             MOV R4,TL0      
+038E AD8C            497             MOV R5,TH0
+                     498             
+0390 8DF0            499             MOV B, R5
+0392 EC              500             MOV A, R4
+                     501             
+0393 120816          502             LCALL show
+                     503             
+0396 7430            504             MOV A, #'0'
+0398 120412          505             LCALL datamy
+                     506             
+039B 7448            507             MOV A,#'H'
+039D 120412          508             LCALL datamy
+                     509             
+03A0 747A            510             MOV A,#'z'
+03A2 120412          511             LCALL datamy
+                     512     
+03A5 0202C6          513             LJMP freq_calc
+                     514             
+                     515             
+                     516     
+03A8                 517             next_check2:                            ;time period changed to 0.01s 
+                     518             
+03A8 C28C            519             CLR TR0                                         ;STOPS THE COUNTER FROM PREVIOUS OP
+                             ERATION
+03AA C28D            520             CLR TF0                                         ;CLEARS THE TF0 FROM THE PREVIOUS O
+                             PERATION
+03AC C28E            521             CLR TR1
+03AE C28F            522             CLR TF1
+                     523             
+03B0 758915          524             MOV     TMOD,#15h                               ;counter 0 mode 1 , timer 1 mode 1
+03B3 D2B4            525             SETB P3.4
+03B5 758A00          526             MOV TL0, #00h
+03B8 758C00          527             MOV     TH0, #00h
+03BB D28C            528             SETB TR0
+03BD 7802            529             MOV R0, #2
+                     530             
+A51 MACRO ASSEMBLER  MCA_PROJECT_MULTIMETER                                               06/23/2020 22:16:33 PAGE    10
+
+03BF                 531     AGAIN5:
+03BF 758BEF          532             MOV TL1, #0EFh
+03C2 758DD8          533             MOV TH1, #0D8h
+                     534             
+03C5 D28E            535             SETB TR1        
+03C7 D28E            536             SETB TR1
+03C9                 537     BACK5:
+03C9 308FFD          538             JNB TF1, BACK5
+03CC C28F            539             CLR TF1
+03CE C28E            540             CLR TR1
+03D0 D8ED            541             DJNZ R0,AGAIN5
+03D2 C28C            542             CLR TR0 
+                     543             
+03D4 AC8A            544             MOV R4,TL0      
+03D6 AD8C            545             MOV R5,TH0
+                     546             
+03D8 8DF0            547             MOV B, R5
+03DA EC              548             MOV A, R4
+                     549             
+03DB 120816          550             LCALL show
+                     551             
+03DE 7430            552             MOV A, #'0'
+03E0 120412          553             LCALL datamy
+                     554             
+03E3 7430            555             MOV A, #'0'
+03E5 120412          556             LCALL datamy
+                     557             
+03E8 7448            558             MOV A,#'H'
+03EA 120412          559             LCALL datamy
+                     560             
+03ED 747A            561             MOV A,#'z'
+03EF 120412          562             LCALL datamy
+                     563     
+                     564             
+03F2 0202C6          565             LJMP freq_calc
+                     566             
+                     567     
+03F5                 568     set_led:        
+03F5 7438            569             MOV A,#38H                              ;2 lines and 5x7 matrix
+03F7 9106            570             ACALL command
+                     571             
+03F9 740E            572             MOV A,#0EH                              ;display on cursor blinking
+03FB 9106            573             ACALL command
+                     574             
+03FD 7401            575             MOV A,#01H                              ;clear display screen
+03FF 9106            576             ACALL command
+                     577     
+0401 7406            578             MOV A,#06H                              ;increment cursor (shift cursor to right) 
+0403 9106            579             ACALL command
+                     580             
+0405 22              581             RET
+                     582             
+                     583             
+                     584     
+0406                 585             command:
+0406 F590            586                                     MOV P1,A
+0408 C2B6            587                                     CLR P3.6
+                     588                                     
+040A D2B7            589                                     SETB P3.7
+040C 120800          590                                     LCALL DELAY
+040F C2B7            591                                     CLR P3.7
+0411 22              592                                     RET
+                     593                                     
+0412                 594             datamy:
+0412 F590            595                                     MOV P1,A
+0414 D2B6            596                                     SETB P3.6
+A51 MACRO ASSEMBLER  MCA_PROJECT_MULTIMETER                                               06/23/2020 22:16:33 PAGE    11
+
+                     597                                     
+0416 D2B7            598                                     SETB P3.7
+0418 120800          599                                     LCALL DELAY
+041B C2B7            600                                     CLR P3.7
+041D 22              601                                     RET
+                     602     
+                     603     
+                     604             
+041E                 605             mode_select:
+041E D2D4            606                     SETB PSW.4                                      ;switching to register bank
+                              2 so that a permanent counter can be set up
+0420 B80109          607                     CJNE R0,#01h, res
+0423 B90109          608                     CJNE R1,#01h, dc
+0426 BA0109          609                     CJNE R2,#01h, freq
+0429 BB0109          610                     CJNE R3,#01h, begin2            ;on overflow, restart back from start
+                     611                     
+                     612                     
+042C                 613                     res:
+042C 120192          614                             LCALL res2
+042F                 615                     dc:
+042F 120225          616                             LCALL dc2
+0432                 617                     freq:
+0432 120296          618                             LCALL freq2
+0435                 619                     begin2:
+0435 120100          620                             LCALL begin
+                     621                             
+                     622                             
+                     623     
+                     624     
+0800                 625     org 0800h
+0800 7B32            626             DELAY:      MOV R3,#50
+0802 7CFF            627             HERE2:          MOV R4,#255
+0804 DCFE            628             HERE:           DJNZ R4,HERE
+0806 DBFA            629                                     DJNZ R3,HERE2
+0808 22              630                                     RET
+                     631     
+                     632                                     
+0809                 633             DELAY1:   
+0809 7D08            634             MOV R5,#8
+080B 7EFA            635             L2:MOV R6,#250
+080D 7FFA            636             L1:MOV R7,#250
+080F DFFE            637             DJNZ R7,$
+0811 DEFA            638             DJNZ R6,L1
+0813 DDF6            639             DJNZ R5,L2
+                     640             
+0815 22              641             RET
+                     642             
+                     643     
+                     644     
+                     645     
+0816                 646     show:   
+                     647                     
+0816 7930            648                     MOV             R1,#30h         ;Point R1 to memory 30h
+0818 85F006          649                     MOV             06,B            ;dividend Higher Byte to R6  ---> R6 = 03h
+081B F507            650                     MOV             07,A            ;dividend Lower Byte to  R7  ---> R7 = 0E8h
+081D 750400          651     up3:    MOV             04,#00d         ;divisor Higher Byte to  R4  ---> R4 = 00d
+0820 75050A          652                     MOV             05,#10d         ;divisor Lower Byte to   R5  ---> R5 = 10d
+0823 121000          653                     LCALL   SIDIV
+0826 A705            654                     MOV             @R1,05           
+0828 09              655                     INC             R1
+0829 EE              656                     MOV             A,R6
+082A 4F              657                     ORL     A,R7
+082B 70F0            658                     JNZ     up3
+                     659     
+                     660                     
+082D 19              661     up4:    DEC             R1
+A51 MACRO ASSEMBLER  MCA_PROJECT_MULTIMETER                                               06/23/2020 22:16:33 PAGE    12
+
+082E E7              662                     MOV             A,@R1
+082F 2430            663                     ADD     A,#30h
+0831 120412          664                     LCALL   datamy
+0834 B930F6          665                     CJNE    R1,#30h,up4     
+                     666                     
+0837 22              667                     RET
+                     668                     
+                     669     
+                     670     
+1000                 671     org     1000h
+                     672             
+                     673             
+                     674             
+                     675             
+                     676             
+                     677             
+                     678             
+1000                 679     SIDIV:
+1000 C2D5            680                     CLR      F0
+1002 EC              681                     MOV      A,R4
+1003 30E709          682                     JNB      0xE0.7,LBL01
+1006 B2D5            683                     CPL      F0
+1008 E4              684                     CLR      A
+1009 C3              685                     CLR      C
+100A 9D              686                     SUBB     A,R5
+100B FD              687                     MOV      R5,A
+100C E4              688                     CLR      A
+100D 9C              689                     SUBB     A,R4
+100E FC              690                     MOV      R4,A
+100F EE              691     LBL01:  MOV      A,R6
+1010 30E715          692                     JNB      0xE0.7,LBL02
+1013 B2D5            693                     CPL      F0
+1015 E4              694                     CLR      A
+1016 C3              695                     CLR      C
+1017 9F              696                     SUBB     A,R7
+1018 FF              697                     MOV      R7,A
+1019 E4              698                     CLR      A
+101A 9E              699                     SUBB     A,R6
+101B FE              700                     MOV      R6,A
+101C 121036          701                     LCALL    UIDIV
+101F C3              702                     CLR      C
+1020 E4              703                     CLR      A
+1021 9D              704                     SUBB     A,R5
+1022 FD              705                     MOV      R5,A
+1023 E4              706                     CLR      A
+1024 9C              707                     SUBB     A,R4
+1025 FC              708                     MOV      R4,A
+1026 8003            709                     SJMP     LBL03
+1028 121036          710     LBL02:  LCALL    UIDIV
+102B 30D507          711     LBL03:  JNB      F0,LBL04
+102E C3              712                     CLR      C
+102F E4              713                     CLR      A
+1030 9F              714                     SUBB     A,R7
+1031 FF              715                     MOV      R7,A
+1032 E4              716                     CLR      A
+1033 9E              717                     SUBB     A,R6
+1034 FE              718                     MOV      R6,A
+1035 22              719     LBL04:  RET      
+1036                 720     UIDIV:
+1036 BC000B          721                     CJNE     R4,#0x00,LBL05
+1039 BE0029          722                     CJNE     R6,#0x00,LBL06
+103C EF              723                     MOV      A,R7
+103D 8DF0            724                     MOV      B,R5
+103F 84              725                     DIV      AB
+1040 FF              726                     MOV      R7,A
+1041 ADF0            727                     MOV      R5,B
+A51 MACRO ASSEMBLER  MCA_PROJECT_MULTIMETER                                               06/23/2020 22:16:33 PAGE    13
+
+1043 22              728                     RET      
+1044 E4              729     LBL05:  CLR      A
+1045 CC              730                     XCH      A,R4
+1046 F8              731                     MOV      R0,A
+1047 75F008          732                     MOV      B,#0x08
+104A EF              733     LBL08:  MOV      A,R7
+104B 2F              734                     ADD      A,R7
+104C FF              735                     MOV      R7,A
+104D EE              736                     MOV      A,R6
+104E 33              737                     RLC      A
+104F FE              738                     MOV      R6,A
+1050 EC              739                     MOV      A,R4
+1051 33              740                     RLC      A
+1052 FC              741                     MOV      R4,A
+1053 EE              742                     MOV      A,R6
+1054 9D              743                     SUBB     A,R5
+1055 EC              744                     MOV      A,R4
+1056 98              745                     SUBB     A,R0
+1057 4005            746                     JC       LBL07
+1059 FC              747                     MOV      R4,A
+105A EE              748                     MOV      A,R6
+105B 9D              749                     SUBB     A,R5
+105C FE              750                     MOV      R6,A
+105D 0F              751                     INC      R7
+105E D5F0E9          752     LBL07:  DJNZ     B,LBL08
+1061 E4              753                     CLR      A
+1062 CE              754                     XCH      A,R6
+1063 FD              755                     MOV      R5,A
+1064 22              756                     RET      
+1065 ED              757     LBL06:  MOV      A,R5
+1066 F8              758                     MOV      R0,A
+1067 F5F0            759                     MOV      B,A
+1069 EE              760                     MOV      A,R6
+106A 84              761                     DIV      AB
+106B 20D21C          762                     JB       OV,LBL09
+106E FE              763                     MOV      R6,A
+106F ADF0            764                     MOV      R5,B
+1071 75F008          765                     MOV      B,#0x08
+1074 EF              766     LBL12:  MOV      A,R7
+1075 2F              767                     ADD      A,R7
+1076 FF              768                     MOV      R7,A
+1077 ED              769                     MOV      A,R5
+1078 33              770                     RLC      A
+1079 FD              771                     MOV      R5,A
+107A 4007            772                     JC       LBL10
+107C 98              773                     SUBB     A,R0
+107D 5006            774                     JNC      LBL11
+107F D5F0F2          775                     DJNZ     B,LBL12
+1082 22              776                     RET      
+1083 C3              777     LBL10:  CLR      C
+1084 98              778                     SUBB     A,R0
+1085 FD              779     LBL11:  MOV      R5,A
+1086 0F              780                     INC      R7
+1087 D5F0EA          781                     DJNZ     B,LBL12
+108A 22              782     LBL09:  RET
+                     783     
+                     784     
+F000                 785     org             0F000h
+F000 02019F          786                                             LJMP dummy_res_ret
+F007                 787     org             0F007h
+F007 020232          788                                             LJMP dummy_dc2_ret
+F00B                 789     org             0F00Bh
+F00B 0202A3          790                                             LJMP dummy_freq2_ret                            
+F0A0                 791     org             0F0A0h
+F0A0 02010D          792                                             LJMP dummy_begin_ret
+                     793     
+A51 MACRO ASSEMBLER  MCA_PROJECT_MULTIMETER                                               06/23/2020 22:16:33 PAGE    14
+
+                     794     
+                     795     
+0600                 796     org 0600h
+0600 41432052        797             acVoltage:      DB              "AC RMS VOLT-", 0
+0604 4D532056                
+0608 4F4C542D                
+060C 00                      
+060D 52455349        798             resistance:     DB              "RESISTANCE-",  0
+0611 5354414E                
+0615 43452D00                
+0619 44432056        799             dcVoltage:      DB              "DC VOLTAGE-",  0
+061D 4F4C5441                
+0621 47452D00                
+0625 46524551        800             frequency:      DB              "FREQUENCY",    0
+0629 55454E43                
+062D 5900                    
+                     801     END
+A51 MACRO ASSEMBLER  MCA_PROJECT_MULTIMETER                                               06/23/2020 22:16:33 PAGE    15
+
+SYMBOL TABLE LISTING
+------ ----- -------
+
+
+N A M E             T Y P E  V A L U E   ATTRIBUTES
+
+ACVOLT . . . . . .  C ADDR   0144H   A   
+ACVOLTAGE. . . . .  C ADDR   0600H   A   
+AGAIN. . . . . . .  C ADDR   02D9H   A   
+AGAIN2 . . . . . .  C ADDR   0308H   A   
+AGAIN3 . . . . . .  C ADDR   0348H   A   
+AGAIN4 . . . . . .  C ADDR   0377H   A   
+AGAIN5 . . . . . .  C ADDR   03BFH   A   
+B. . . . . . . . .  D ADDR   00F0H   A   
+BACK . . . . . . .  C ADDR   02E1H   A   
+BACK2. . . . . . .  C ADDR   0310H   A   
+BACK3. . . . . . .  C ADDR   0350H   A   
+BACK4. . . . . . .  C ADDR   0381H   A   
+BACK5. . . . . . .  C ADDR   03C9H   A   
+BEGIN. . . . . . .  C ADDR   0100H   A   
+BEGIN2 . . . . . .  C ADDR   0435H   A   
+C1 . . . . . . . .  C ADDR   0139H   A   
+CALC_RES . . . . .  C ADDR   01D3H   A   
+CHECK1 . . . . . .  C ADDR   02CAH   A   
+COMMAND. . . . . .  C ADDR   0406H   A   
+D1 . . . . . . . .  C ADDR   01C8H   A   
+DATAMY . . . . . .  C ADDR   0412H   A   
+DC . . . . . . . .  C ADDR   042FH   A   
+DC2. . . . . . . .  C ADDR   0225H   A   
+DCVOLTAGE. . . . .  C ADDR   0619H   A   
+DC_CALC. . . . . .  C ADDR   0266H   A   
+DELAY. . . . . . .  C ADDR   0800H   A   
+DELAY1 . . . . . .  C ADDR   0809H   A   
+DOWN1. . . . . . .  C ADDR   0110H   A   
+DOWN7. . . . . . .  C ADDR   01A2H   A   
+DOWN8. . . . . . .  C ADDR   0235H   A   
+DOWN9. . . . . . .  C ADDR   02A6H   A   
+DUMMY_BEGIN_RET. .  C ADDR   010DH   A   
+DUMMY_DC2_RET. . .  C ADDR   0232H   A   
+DUMMY_FREQ2_RET. .  C ADDR   02A3H   A   
+DUMMY_RES_RET. . .  C ADDR   019FH   A   
+E1 . . . . . . . .  C ADDR   025BH   A   
+F0 . . . . . . . .  B ADDR   00D0H.5 A   
+F1 . . . . . . . .  C ADDR   02BBH   A   
+FREQ . . . . . . .  C ADDR   0432H   A   
+FREQ2. . . . . . .  C ADDR   0296H   A   
+FREQUENCY. . . . .  C ADDR   0625H   A   
+FREQ_CALC. . . . .  C ADDR   02C6H   A   
+HERE . . . . . . .  C ADDR   0804H   A   
+HERE2. . . . . . .  C ADDR   0802H   A   
+HERE5. . . . . . .  C ADDR   0159H   A   
+HERE6. . . . . . .  C ADDR   01E8H   A   
+HERE7. . . . . . .  C ADDR   027BH   A   
+IE . . . . . . . .  D ADDR   00A8H   A   
+L1 . . . . . . . .  C ADDR   080DH   A   
+L2 . . . . . . . .  C ADDR   080BH   A   
+LBL01. . . . . . .  C ADDR   100FH   A   
+LBL02. . . . . . .  C ADDR   1028H   A   
+LBL03. . . . . . .  C ADDR   102BH   A   
+LBL04. . . . . . .  C ADDR   1035H   A   
+LBL05. . . . . . .  C ADDR   1044H   A   
+LBL06. . . . . . .  C ADDR   1065H   A   
+LBL07. . . . . . .  C ADDR   105EH   A   
+LBL08. . . . . . .  C ADDR   104AH   A   
+LBL09. . . . . . .  C ADDR   108AH   A   
+LBL10. . . . . . .  C ADDR   1083H   A   
+A51 MACRO ASSEMBLER  MCA_PROJECT_MULTIMETER                                               06/23/2020 22:16:33 PAGE    16
+
+LBL11. . . . . . .  C ADDR   1085H   A   
+LBL12. . . . . . .  C ADDR   1074H   A   
+MODE_SELECT. . . .  C ADDR   041EH   A   
+NEXT_CHECK1. . . .  C ADDR   0331H   A   
+NEXT_CHECK2. . . .  C ADDR   03A8H   A   
+OV . . . . . . . .  B ADDR   00D0H.2 A   
+P0 . . . . . . . .  D ADDR   0080H   A   
+P1 . . . . . . . .  D ADDR   0090H   A   
+P2 . . . . . . . .  D ADDR   00A0H   A   
+P3 . . . . . . . .  D ADDR   00B0H   A   
+PREV . . . . . . .  C ADDR   02F1H   A   
+PREV2. . . . . . .  C ADDR   0360H   A   
+PSW. . . . . . . .  D ADDR   00D0H   A   
+RES. . . . . . . .  C ADDR   042CH   A   
+RES2 . . . . . . .  C ADDR   0192H   A   
+RESISTANCE . . . .  C ADDR   060DH   A   
+SET_LED. . . . . .  C ADDR   03F5H   A   
+SHOW . . . . . . .  C ADDR   0816H   A   
+SIDIV. . . . . . .  C ADDR   1000H   A   
+SP . . . . . . . .  D ADDR   0081H   A   
+TCON . . . . . . .  D ADDR   0088H   A   
+TF0. . . . . . . .  B ADDR   0088H.5 A   
+TF1. . . . . . . .  B ADDR   0088H.7 A   
+TH0. . . . . . . .  D ADDR   008CH   A   
+TH1. . . . . . . .  D ADDR   008DH   A   
+TL0. . . . . . . .  D ADDR   008AH   A   
+TL1. . . . . . . .  D ADDR   008BH   A   
+TMOD . . . . . . .  D ADDR   0089H   A   
+TR0. . . . . . . .  B ADDR   0088H.4 A   
+TR1. . . . . . . .  B ADDR   0088H.6 A   
+UIDIV. . . . . . .  C ADDR   1036H   A   
+UP1. . . . . . . .  C ADDR   016EH   A   
+UP2. . . . . . . .  C ADDR   017EH   A   
+UP3. . . . . . . .  C ADDR   081DH   A   
+UP4. . . . . . . .  C ADDR   082DH   A   
+
+
+REGISTER BANK(S) USED: 0 
+
+
+ASSEMBLY COMPLETE.  0 WARNING(S), 0 ERROR(S)
