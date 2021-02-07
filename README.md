@@ -16,7 +16,6 @@ Mr. Yogesh Gholap
 
 
 ## Table of Contents
-
 ---  
 
 - [Tasks](#tasks)  
@@ -28,7 +27,6 @@ Mr. Yogesh Gholap
 - [License](#license)
 
 ## Tasks
-
 ---
 
 ### 1. Frequency Meter  
